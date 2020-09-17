@@ -19,10 +19,10 @@ export default {
   title: "API integrations",
   argTypes: {
     api: {
-      defaultValue: "mock",
+      defaultValue: "real",
       control: {
         type: "radio",
-        options: ["mock", "real"],
+        options: ["real", "mock"],
       },
     },
     apiUrl: {
