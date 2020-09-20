@@ -30,7 +30,11 @@ function overrideClasses(classes, overrides) {
   var newClasses = Object.assign({}, classes);
 
   for (var key in overrides) {
-    newClasses[key] = mergeClasses(newClasses[key], overrides[key]);
+    var mergedClasses = mergeClasses(newClasses[key], overrides[key]);
+
+    if (mergedClasses) {
+      newClasses[key] = mergedClasses;
+    }
   }
 
   return newClasses;
@@ -942,7 +946,7 @@ function useApiResponse(makeInvocation, dependencies) {
       if (!mounted) return;
       setState(prevState => ({
         data: discardDataOnError ? null : prevState.data,
-        hasData: discardDataOnError ? null : prevState.hasData,
+        hasData: discardDataOnError ? false : prevState.hasData,
         loading: false,
         error
       }));
@@ -978,7 +982,7 @@ function makeJsonFetch() {
     };
 
     if (body != null) {
-      headers["Content-Type"] = "application/json";
+      sentHeaders["Content-Type"] = "application/json";
     }
 
     Object.assign(sentHeaders, defaultHeaders);
@@ -1314,17 +1318,19 @@ styleInject(css_248z$1);
 
 var Button = themable("Button", cssClasses$1)(
 /*#__PURE__*/
-// eslint-disable-next-line react/display-name, @typescript-eslint/no-unused-vars
-React.forwardRef((_ref, ref) => {
+// eslint-disable-next-line react/display-name
+React.forwardRef( // eslint-disable-next-line @typescript-eslint/no-unused-vars
+(_ref, forwardedRef) => {
   var classes = _ref.classes,
       className = _ref.className,
       constants = _ref.constants,
-      otherProps = _objectWithoutProperties(_ref, ["classes", "className", "constants"]);
+      ref = _ref.ref,
+      otherProps = _objectWithoutProperties(_ref, ["classes", "className", "constants", "ref"]);
 
   return /*#__PURE__*/React__default['default'].createElement("button", Object.assign({
     className: classes.root
   }, otherProps, {
-    ref: ref
+    ref: forwardedRef
   }));
 }));
 
@@ -1554,7 +1560,9 @@ var cssClasses$7 = {
 };
 styleInject(css_248z$7);
 
-var exists = x => x || x === 0;
+function exists(x) {
+  return x || false;
+}
 
 var PercentageBarsLegend = themable("PercentageBarsLegend", cssClasses$7)((_ref) => {
   var items = _ref.items,
@@ -1586,7 +1594,7 @@ var defaultConstants = {
   gridLabelColor: "#C1C1C1",
   gridColor: "#E2E2E2"
 };
-var BarChart = themable("BarChart", null, defaultConstants)((_ref) => {
+var BarChart = themable("BarChart", undefined, defaultConstants)((_ref) => {
   var classes = _ref.classes,
       constants = _ref.constants,
       width = _ref.width,
@@ -1839,6 +1847,8 @@ var defaultValues = {
   featureHoverFill: "rgba(255, 204, 0, 0.6)"
 };
 var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
+  var _classes$tooltip;
+
   var classes = _ref2.classes,
       constants = _ref2.constants,
       width = _ref2.width,
@@ -1884,7 +1894,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
     group: null,
     features: null,
     tooltipEl: null,
-    tooltipClassName: classes.tooltip,
+    tooltipClassName: (_classes$tooltip = classes.tooltip) !== null && _classes$tooltip !== void 0 ? _classes$tooltip : null,
     tooltipTop: 0,
     tooltipLeft: 0,
     centerOnOverlayBounds
@@ -1935,6 +1945,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
   }, [width, height, map]); // Whenever selectedFeature changes
 
   React.useLayoutEffect(() => {
+    if (!featureStyles) return;
     var self = inst.current;
     var features = self.features,
         lastSelectedFeature = self.selectedFeature,
@@ -1973,13 +1984,13 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
     }
   }, [classes.tooltip]);
   React.useLayoutEffect(() => {
-    if (!H || !map || !overlayUrl) return;
+    if (!H || !map || !overlayUrl || !featureStyles) return;
     var self = inst.current;
 
     var setHoveredFeature = (id, name) => {
       var hadTooltip = !!self.hoveredFeature;
-      var hasTooltip = id != null;
-      self.hoveredFeature = hasTooltip ? {
+      var hasTooltip = id != null && name != null;
+      self.hoveredFeature = id != null && name != null ? {
         id,
         name
       } : null;
@@ -1988,7 +1999,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
         var _mapRef$current;
 
         var tooltipEl = document.createElement("div");
-        tooltipEl.className = self.tooltipClassName;
+        tooltipEl.className = self.tooltipClassName || "";
         tooltipEl.style.left = "".concat(self.tooltipLeft, "px");
         tooltipEl.style.top = "".concat(self.tooltipTop, "px");
         (_mapRef$current = mapRef.current) === null || _mapRef$current === void 0 ? void 0 : _mapRef$current.appendChild(tooltipEl);
@@ -2000,7 +2011,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
         self.tooltipEl = null;
       }
 
-      if (name) {
+      if (name && self.tooltipEl) {
         self.tooltipEl.innerText = name;
       }
     };
@@ -2031,7 +2042,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
         var isCurrent = id === self.selectedFeature;
 
         if (((_self$hoveredFeature = self.hoveredFeature) === null || _self$hoveredFeature === void 0 ? void 0 : _self$hoveredFeature.id) === id) {
-          setHoveredFeature();
+          setHoveredFeature(null, null);
         }
 
         mapObject.setStyle(isCurrent ? featureStyles.selected : featureStyles.default);
@@ -2065,7 +2076,7 @@ var HereMap = themable("HereMap", cssClasses$9, defaultValues)((_ref2) => {
         }
       }
     });
-    var group;
+    var group = null;
     reader.addEventListener("statechange", () => {
       if (reader.getState() !== H.data.AbstractReader.State.READY) return;
       group = reader.getParsedObjects().find(object => {
@@ -2195,13 +2206,17 @@ var ElectionMap = themable("ElectionMap", cssClasses$8)((_ref) => {
 
   var _useMemo = React.useMemo(() => {
     if (scope.type === "locality" && scope.countyId != null) {
-      return ["".concat(electionMapOverlayUrl, "/localities_").concat(scope.countyId, ".geojson"), scope.localityId, localityId => _objectSpread$2(_objectSpread$2({}, scope), {}, {
+      var _scope$localityId;
+
+      return ["".concat(electionMapOverlayUrl, "/localities_").concat(scope.countyId, ".geojson"), (_scope$localityId = scope.localityId) !== null && _scope$localityId !== void 0 ? _scope$localityId : null, localityId => _objectSpread$2(_objectSpread$2({}, scope), {}, {
         localityId
       })];
     }
 
     if (scope.type === "locality" && scope.countyId == null || scope.type === "county") {
-      return ["".concat(electionMapOverlayUrl, "/counties.geojson"), scope.countyId, countyId => _objectSpread$2(_objectSpread$2({}, scope), {}, {
+      var _scope$countyId;
+
+      return ["".concat(electionMapOverlayUrl, "/counties.geojson"), (_scope$countyId = scope.countyId) !== null && _scope$countyId !== void 0 ? _scope$countyId : null, countyId => _objectSpread$2(_objectSpread$2({}, scope), {}, {
         countyId
       })];
     }
@@ -2276,8 +2291,9 @@ styleInject(css_248z$a);
 
 var ResultsTable = themable("ResultsTable", cssClasses$a)(
 /*#__PURE__*/
-// eslint-disable-next-line react/display-name, @typescript-eslint/no-unused-vars
-React.forwardRef((_ref, ref) => {
+// eslint-disable-next-line react/display-name
+React.forwardRef( // eslint-disable-next-line @typescript-eslint/no-unused-vars
+(_ref, ref) => {
   var classes = _ref.classes,
       className = _ref.className,
       constants = _ref.constants,
@@ -2384,7 +2400,8 @@ var categoryLabels = {
 };
 var breakdownTypeLabels = {
   national: "România",
-  diaspora: "Diaspora"
+  diaspora: "Diaspora",
+  all: ""
 };
 
 var adjustScale = x => {
@@ -2441,7 +2458,7 @@ var ElectionTurnoutBreakdownChart = themable("ElectionTurnoutBreakdownChart", cs
     className: classes.chart,
     width: width !== null && width !== void 0 ? width : 1,
     yMax: (_value$total = value.total) !== null && _value$total !== void 0 ? _value$total : adjustScale(value.categories.reduce((acc, category) => Math.max(acc, category.votes), 0)),
-    renderLabel: value.total != null ? x => formatPercentage(x / value.total) : formatGroupedNumber,
+    renderLabel: value.total != null ? x => formatPercentage(x / (value.total || 0)) : formatGroupedNumber,
     bars: value.categories.map((_ref2) => {
       var _categoryColors$categ;
 
@@ -2550,7 +2567,7 @@ var defaultConstants$1 = {
   breakpoint3: 480
 };
 var ElectionTurnoutSection = themable("ElectionTurnoutSection", cssClasses$c, defaultConstants$1)((_ref) => {
-  var _turnout$breakdown, _turnout$breakdown2;
+  var _turnout$breakdown$le, _turnout$breakdown, _turnout$breakdown2;
 
   var meta = _ref.meta,
       scope = _ref.scope,
@@ -2599,7 +2616,7 @@ var ElectionTurnoutSection = themable("ElectionTurnoutSection", cssClasses$c, de
     ref: measureRef
   }), /*#__PURE__*/React__default['default'].createElement("div", {
     className: mergeClasses(mergeClasses(classes.mapBreakdownContainer, fullWidthMap && classes.mapBreakdownContainerFullWidth), mobileMap && classes.mapBreakdownContainerMobile)
-  }, turnout && completeness.complete && (((_turnout$breakdown = turnout.breakdown) === null || _turnout$breakdown === void 0 ? void 0 : _turnout$breakdown.length) > 0 || turnout.eligibleVoters == null) && /*#__PURE__*/React__default['default'].createElement("div", {
+  }, turnout && completeness.complete && (((_turnout$breakdown$le = (_turnout$breakdown = turnout.breakdown) === null || _turnout$breakdown === void 0 ? void 0 : _turnout$breakdown.length) !== null && _turnout$breakdown$le !== void 0 ? _turnout$breakdown$le : 0) > 0 || turnout.eligibleVoters == null) && /*#__PURE__*/React__default['default'].createElement("div", {
     className: classes.breakdownContainer
   }, turnout.eligibleVoters == null && /*#__PURE__*/React__default['default'].createElement("div", {
     className: mergeClasses(classes.breakdown, classes.totalVotesContainer)
@@ -3137,8 +3154,7 @@ var SeatsGraphic = /*#__PURE__*/React.memo(function SeatsGraphicUnmemoized(_ref)
       height = _ref.height,
       selectedCandidate = _ref.selectedCandidate,
       onSelectCandidate = _ref.onSelectCandidate;
-  var _results$totalSeats = results.totalSeats,
-      totalSeats = _results$totalSeats === void 0 ? 1 : _results$totalSeats; // Scale the dot size with the total number of dots so that
+  var totalSeats = results.totalSeats || 1; // Scale the dot size with the total number of dots so that
   // the total area of the graph remains the same.
 
   var r = React.useMemo(() => 45.345892868 / Math.sqrt(totalSeats), [totalSeats]);
@@ -3213,7 +3229,7 @@ var SeatsGraphic = /*#__PURE__*/React.memo(function SeatsGraphicUnmemoized(_ref)
     results.candidates.forEach((candidate, index) => {
       var seats = candidate.seats;
 
-      if (Number.isFinite(seats) && seats > 0) {
+      if (Number.isFinite(seats) && seats != null && seats > 0) {
         fromStart = !fromStart;
 
         for (; seats > 0 && start <= end; seats -= 1) {
@@ -3279,7 +3295,8 @@ var ElectionResultsSeats = themable("ElectionResultsSeats", cssClasses$h, defaul
   var _useDimensions = useDimensions(),
       _useDimensions2 = _slicedToArray(_useDimensions, 2),
       measureRef = _useDimensions2[0],
-      width = _useDimensions2[1].width;
+      _useDimensions2$1$wid = _useDimensions2[1].width,
+      width = _useDimensions2$1$wid === void 0 ? NaN : _useDimensions2$1$wid;
 
   var svgHeight = constants.height;
   var svgWidth = constants.height * 2;
@@ -3304,7 +3321,7 @@ var ElectionResultsSeats = themable("ElectionResultsSeats", cssClasses$h, defaul
   }, results.candidates.map((candidate, index) => {
     var _candidate$shortName;
 
-    return Number.isFinite(candidate.seats) && candidate.seats > 0 ? /*#__PURE__*/React__default['default'].createElement(DivBody, {
+    return Number.isFinite(candidate.seats) && candidate.seats != null && candidate.seats > 0 ? /*#__PURE__*/React__default['default'].createElement(DivBody, {
       className: classes.legendItem,
       key: index
     }, /*#__PURE__*/React__default['default'].createElement(ColoredSquare, {
@@ -3362,7 +3379,7 @@ var CandidateTable = (_ref) => {
     key: index
   }, /*#__PURE__*/React__default['default'].createElement("td", {
     className: classes.nameCell
-  }, candidate.name), hasCandidateCount && /*#__PURE__*/React__default['default'].createElement("th", null, formatGroupedNumber(candidate.candidateCount)), /*#__PURE__*/React__default['default'].createElement("td", null, formatGroupedNumber(candidate.votes)), /*#__PURE__*/React__default['default'].createElement("td", null, formatPercentage(fractionOf(candidate.votes, validVotes))), hasSeats && /*#__PURE__*/React__default['default'].createElement("td", null, formatGroupedNumber(candidate.seats)), hasSeatsGained && /*#__PURE__*/React__default['default'].createElement("td", null, typeof candidate.seatsGained === "number" ? formatGroupedNumber(candidate.seatsGained) : candidate.seatsGained === "new" ? "Nou" : candidate.seatsGained))))), canCollapse && /*#__PURE__*/React__default['default'].createElement(Button, {
+  }, candidate.name), hasCandidateCount && /*#__PURE__*/React__default['default'].createElement("th", null, formatGroupedNumber(candidate.candidateCount || 0)), /*#__PURE__*/React__default['default'].createElement("td", null, formatGroupedNumber(candidate.votes)), /*#__PURE__*/React__default['default'].createElement("td", null, formatPercentage(fractionOf(candidate.votes, validVotes))), hasSeats && /*#__PURE__*/React__default['default'].createElement("td", null, formatGroupedNumber(candidate.seats || 0)), hasSeatsGained && /*#__PURE__*/React__default['default'].createElement("td", null, typeof candidate.seatsGained === "number" ? formatGroupedNumber(candidate.seatsGained) : candidate.seatsGained === "new" ? "Nou" : candidate.seatsGained))))), canCollapse && /*#__PURE__*/React__default['default'].createElement(Button, {
     className: classes.collapseButton,
     onClick: onToggleCollapsed
   }, collapsed ? "Afișează toți candidații" : "Ascunde toți candidații"));
@@ -3373,8 +3390,8 @@ var ElectionResultsTableSection = themable("ElectionResultsTableSection", cssCla
       results = _ref2.results,
       meta = _ref2.meta;
   var hasSeats = electionHasSeats(meta.type, results);
-  var qualified = hasSeats ? results.candidates.filter(cand => Number.isFinite(cand.seats) && cand.seats > 0) : results.candidates;
-  var unqualified = hasSeats ? results.candidates.filter(cand => !Number.isFinite(cand.seats) || cand.seats <= 0) : null;
+  var qualified = hasSeats ? results.candidates.filter(cand => Number.isFinite(cand.seats) && (cand.seats || 0) > 0) : results.candidates;
+  var unqualified = hasSeats ? results.candidates.filter(cand => !Number.isFinite(cand.seats) || (cand.seats || 0) <= 0) : null;
 
   if (unqualified && unqualified.length > 0) {
     return /*#__PURE__*/React__default['default'].createElement(React__default['default'].Fragment, null, /*#__PURE__*/React__default['default'].createElement(Heading2, {
@@ -3786,7 +3803,7 @@ var ElectionTimeline = themable("ElectionTimeline", cssClasses$k)((_ref) => {
         election = {
           electionId,
           title: meta.title,
-          live: meta.live,
+          live: !!meta.live,
           ballots: []
         };
         currentYear.elections.push(election);
@@ -3815,7 +3832,7 @@ var ElectionTimeline = themable("ElectionTimeline", cssClasses$k)((_ref) => {
 
   React.useEffect(() => {
     setExpandedElections(set => {
-      if (set.has(selectedElectionId)) return set;
+      if (selectedElectionId == null || set.has(selectedElectionId)) return set;
       var newSet = new Set(set);
       newSet.add(selectedElectionId);
       return newSet;
@@ -3959,7 +3976,10 @@ var useElectionScopePickerApi = (api, scope) => {
 };
 
 function resolveValue(x) {
-  return typeof x === "object" ? x === null || x === void 0 ? void 0 : x.id : x;
+  var _x$, _ref2;
+
+  if (Array.isArray(x)) return (_x$ = x[0]) === null || _x$ === void 0 ? void 0 : _x$.id;
+  return (_ref2 = typeof x === "object" ? x === null || x === void 0 ? void 0 : x.id : x) !== null && _ref2 !== void 0 ? _ref2 : null;
 }
 
 var resolveInMap = (id, map) => {
@@ -3967,7 +3987,7 @@ var resolveInMap = (id, map) => {
 
   return id == null ? null : {
     id,
-    name: (_map$get = map.get(id)) === null || _map$get === void 0 ? void 0 : _map$get.name
+    name: ((_map$get = map.get(id)) === null || _map$get === void 0 ? void 0 : _map$get.name) || ""
   };
 };
 
@@ -4091,13 +4111,13 @@ var useElectionScopePickerGetSelectProps = (apiData, scope, onChangeScope) => {
   return selects;
 };
 
-function getOptionLabel(_ref2) {
-  var name = _ref2.name;
+function getOptionLabel(_ref3) {
+  var name = _ref3.name;
   return name;
 }
 
-function getOptionValue(_ref3) {
-  var id = _ref3.id;
+function getOptionValue(_ref4) {
+  var id = _ref4.id;
   return id.toString();
 }
 
@@ -4123,6 +4143,7 @@ var typeOptions = [{
 var useElectionScopePickerGetTypeSelectProps = (scope, onChangeScope) => {
   var onTypeChange = React.useCallback(value => {
     var type = resolveValue(value);
+    if (type === null) return;
     var newScope = electionScopePickerUpdateType(scope, type);
 
     if (newScope !== scope) {
@@ -4148,11 +4169,13 @@ var useElectionScopePickerGetTypeSelectProps = (scope, onChangeScope) => {
 var loadingMessage = () => "Se încarcă...";
 
 var typeSelectStyles = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: provided => _objectSpread$3(_objectSpread$3({}, provided), {}, {
     borderColor: "transparent",
     borderWidth: 0,
     cursor: "pointer"
   }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   valueContainer: provided => _objectSpread$3(_objectSpread$3({}, provided), {}, {
     fontWeight: 600,
     fontSize: "".concat(30 / 16, "rem"),
@@ -4162,15 +4185,16 @@ var typeSelectStyles = {
     display: "none"
   })
 };
-var ElectionScopePicker = themable("ElectionScopePicker", cssClasses$l)((_ref4) => {
-  var classes = _ref4.classes,
-      apiData = _ref4.apiData,
-      value = _ref4.value,
-      onChange = _ref4.onChange;
+var ElectionScopePicker = themable("ElectionScopePicker", cssClasses$l)((_ref5) => {
+  var classes = _ref5.classes,
+      apiData = _ref5.apiData,
+      value = _ref5.value,
+      onChange = _ref5.onChange;
   var typeSelect = useElectionScopePickerGetTypeSelectProps(value, onChange);
   var selects = useElectionScopePickerGetSelectProps(apiData, value, onChange);
   var theme = useTheme();
-  var selectTheme = React.useMemo(() => t => _objectSpread$3(_objectSpread$3({}, t), {}, {
+  var selectTheme = React.useMemo( // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  () => t => _objectSpread$3(_objectSpread$3({}, t), {}, {
     colors: _objectSpread$3(_objectSpread$3({}, t.colors), {}, {
       primary: theme.colors.primary,
       primary75: theme.colors.primary75,
@@ -4189,9 +4213,9 @@ var ElectionScopePicker = themable("ElectionScopePicker", cssClasses$l)((_ref4) 
     styles: typeSelectStyles
   })), /*#__PURE__*/React__default['default'].createElement("div", {
     className: classes.selects
-  }, selects.map((_ref5, index) => {
-    var label = _ref5.label,
-        selectProps = _ref5.selectProps;
+  }, selects.map((_ref6, index) => {
+    var label = _ref6.label,
+        selectProps = _ref6.selectProps;
     return /*#__PURE__*/React__default['default'].createElement("div", {
       key: index,
       className: classes.selectContainer

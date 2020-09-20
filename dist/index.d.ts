@@ -3,7 +3,7 @@ import { ComponentType, ReactNode } from "react";
 type ClassNames = {
     [key: string]: string;
 };
-declare function mergeClasses(a: string | void, b: string | void): string | undefined;
+declare function mergeClasses(a: string | null | undefined | false, b: string | null | undefined | false): string | undefined;
 declare function overrideClasses(classes: ClassNames, overrides?: ClassNames | void): ClassNames;
 interface Theme extends ThemeConstants {
     colors: {
@@ -44,7 +44,7 @@ type ThemedComponent<P extends PropsObject> = React.ComponentType<ThemedComponen
 type ThemableHOC<P extends PropsObject> = (Component: ThemedComponent<P>) => ThemableComponent<P>;
 // This function has this arity so that it can also be used as a decorator,
 // whenever those might become mainstream
-declare const themable: <P extends object>(componentName: string, componentClasses?: ClassNames, componentValues?: ThemeConstants) => ThemableHOC<P>;
+declare const themable: <P extends object>(componentName: string, componentClasses?: ClassNames | undefined, componentValues?: ThemeConstants | undefined) => ThemableHOC<P>;
 type APIInvocation<ResponseType> = (abortSignal?: AbortSignal) => Promise<ResponseType>;
 type APIRequestState<ResponseType> = {
     data: ResponseType | null;
@@ -58,24 +58,24 @@ type UseAPIResponseOptions<ResponseType> = {
     discardDataOnError?: boolean; // Defaults to false
     abortPreviousRequest?: boolean; // Defaults to true
 };
-declare function useApiResponse<ResponseType>(makeInvocation: () => APIInvocation<ResponseType> | UseAPIResponseOptions<ResponseType> | void, dependencies: unknown[]): APIRequestState<ResponseType>;
+declare function useApiResponse<ResponseType>(makeInvocation: () => APIInvocation<ResponseType> | UseAPIResponseOptions<ResponseType> | undefined | void | null, dependencies: unknown[]): APIRequestState<ResponseType>;
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type JSONFetchOptions<BodyType = unknown, QueryParamsType extends Record<string, any> = unknown> = {
+type JSONFetchOptions<BodyType = unknown, QueryParamsType extends Record<string, any> = any> = {
     body?: BodyType;
     query?: QueryParamsType;
     headers?: Record<string, string>;
     fetchOptions?: RequestInit;
 };
-type JSONFetch = <ResponseType = unknown, BodyType extends Record<string, any> = unknown, QueryParamsType = unknown>(method?: string, endpoint?: string, options?: JSONFetchOptions<BodyType, QueryParamsType>) => APIInvocation<ResponseType>;
-declare function makeJsonFetch(urlPrefix?: string, defaultHeaders?: Record<string, string>, handleHttpError?: (Response: any) => Promise<any> | never, handleData?: (any: any) => any): JSONFetch;
+type JSONFetch = <ResponseType = unknown, BodyType extends Record<string, any> = any, QueryParamsType = unknown>(method: string, endpoint: string, options?: JSONFetchOptions<BodyType, QueryParamsType>) => APIInvocation<ResponseType>;
+declare function makeJsonFetch(urlPrefix?: string, defaultHeaders?: Record<string, string>, handleHttpError?: (res: Response) => Promise<any> | never, handleData?: (data: any) => any): JSONFetch;
 declare const jsonFetch: JSONFetch;
-type APIMockHandler<ResponseType = unknown, BodyType = unknown, QueryParamsType extends Record<string, any> = unknown> = (request: {
+type APIMockHandler<ResponseType = unknown, BodyType = unknown, QueryParamsType extends Record<string, any> = any> = (request: {
     endpoint: string;
-    match: RegExpMatchArray;
+    match: RegExpMatchArray | null;
     body: BodyType;
     query: QueryParamsType;
 }) => ResponseType | Promise<ResponseType>;
-type APIMockEntry<ResponseType = unknown, BodyType = unknown, QueryParamsType extends Record<string, any> = unknown> = [
+type APIMockEntry<ResponseType = unknown, BodyType = unknown, QueryParamsType extends Record<string, any> = any> = [
     string,
     RegExp | string,
     APIMockHandler<ResponseType, BodyType, QueryParamsType>
@@ -107,9 +107,9 @@ type ElectionScopeCompleteness = {
 };
 declare const electionScopeIsComplete: (scope: ElectionScopeIncomplete) => ElectionScopeCompleteness;
 type ElectionScopeNames = {
-    countyName?: string;
-    countryName?: string;
-    localityName?: string;
+    countyName?: string | null;
+    countryName?: string | null;
+    localityName?: string | null;
 };
 type ElectionScopeResolved = ElectionScope & ElectionScopeNames;
 type ElectionScopeIncompleteResolved = ElectionScopeIncomplete & ElectionScopeNames;
@@ -124,9 +124,9 @@ type ElectionMeta = {
     type: ElectionType;
     date: string; // ISO 8601
     title: string; // eg. "Alegeri locale"
-    ballot?: string; // eg. "Primar", maybe find a better name for this?
-    subtitle?: string; // eg. "Pentru trecerea la parlament unicameral și reducerea numărului de parlamentari"
-    live?: boolean; // Send true when the election is ongoing
+    ballot?: string | null; // eg. "Primar", maybe find a better name for this?
+    subtitle?: string | null; // eg. "Pentru trecerea la parlament unicameral și reducerea numărului de parlamentari"
+    live?: boolean | null; // Send true when the election is ongoing
     ballotId: number; // The ID of this Election (Ballot in the backend, a rename might be in order)
     electionId: number; // Used for grouping
     // TODO: I haven't the slightest idea what should go in here, but I assume some sort
@@ -139,21 +139,21 @@ type Election = {
     scope: ElectionScopeResolved;
     meta: ElectionMeta;
     // These can be missing if the election doesn't support the current scope (eg. local elections with a national scope).
-    turnout?: ElectionTurnout;
-    results?: ElectionResults;
+    turnout?: ElectionTurnout | null;
+    results?: ElectionResults | null;
     // Send this only when it makes sense (for the national scope)
-    observation?: ElectionObservation;
+    observation?: ElectionObservation | null;
 };
 type ElectionTurnout = {
-    eligibleVoters?: number; // Cetățeni cu drept de vot. Nu se aplică pentru diaspora
+    eligibleVoters?: number | null; // Cetățeni cu drept de vot. Nu se aplică pentru diaspora
     totalVotes: number;
-    breakdown?: ElectionTurnoutBreakdown[];
+    breakdown?: ElectionTurnoutBreakdown[] | null;
 };
 // Open to extensions
 type ElectionTurnoutBreakdownCategoryType = "permanent_lists" | "supplementary_lists" | "mobile_ballot_box" | "vote_by_mail";
 type ElectionTurnoutBreakdown = {
     type: "national" | "diaspora" | "all"; // Open to extensions. "all" means this chart applies to the whole scope
-    total?: number;
+    total?: number | null;
     categories: {
         type: ElectionTurnoutBreakdownCategoryType;
         votes: number;
@@ -169,22 +169,21 @@ type ElectionObservation = {
 type ElectionResultsCandidate = {
     // These still refer to parties in the context of local_council and county_council
     name: string; // eg. "Uniunea Salvați România",
-    shortName?: string; // eg. "USR"
-    partyColor?: string;
-    partyLogo?: string; // A URL to a party logo image (square, with transparency, preferably SVG)
+    shortName?: string | null; // eg. "USR"
+    partyColor?: string | null;
+    partyLogo?: string | null; // A URL to a party logo image (square, with transparency, preferably SVG)
     votes: number;
-    seats?: number;
-    seatsGained?: number | "new";
+    seats?: number | null;
+    seatsGained?: number | "new" | null;
     candidateCount?: number;
-    [extraFields: string]: number | string; // Care e faza cu "Mandat1/Mandat2"?
 };
 type ElectionResults = {
-    eligibleVoters?: number; // Duplicate this from ElectionTurnout
+    eligibleVoters?: number | null; // Duplicate this from ElectionTurnout
     totalVotes: number; // Duplicate this from ElectionTurnout
-    votesByMail?: number; // For diaspora
+    votesByMail?: number | null; // For diaspora
     validVotes: number;
     nullVotes: number;
-    totalSeats?: number; // For the parliament (maybe even council) seats widget
+    totalSeats?: number | null; // For the parliament (maybe even council) seats widget
     candidates: ElectionResultsCandidate[]; // Sorted descending by votes
 };
 type OptionWithID<K = number, N = string> = {
@@ -201,9 +200,9 @@ interface ElectionAPI extends ElectionScopeAPI {
     getElections: () => APIInvocation<ElectionMeta[]>;
 }
 declare const makeElectionApi: (options?: {
-    apiUrl?: string;
-    fetch?: JSONFetch; // for optional mocking
-}) => ElectionAPI;
+    apiUrl?: string | undefined;
+    fetch?: JSONFetch | undefined;
+} | undefined) => ElectionAPI;
 // TODO
 declare const electionApiProductionUrl = "https://api.rezultatevot.ro/api";
 declare const electionMapOverlayUrl = "//localhost:5000";
@@ -303,10 +302,10 @@ type Props$5 = {
 declare const BarChart: React.ComponentType<Partial<ThemableComponentProps<Props$5>>>; // To make defaultProps work
 declare const ElectionMap: React.ComponentType<ThemableComponentProps<React.PropsWithChildren<{
     scope: ElectionScopeIncomplete;
-    onScopeChange?: (scope: ElectionScopeIncomplete) => unknown;
-    involvesDiaspora?: boolean;
-    aspectRatio?: number;
-    maxHeight?: number;
+    onScopeChange?: ((scope: ElectionScopeIncomplete) => unknown) | undefined;
+    involvesDiaspora?: boolean | undefined;
+    aspectRatio?: number | undefined;
+    maxHeight?: number | undefined;
 }>>>;
 type OnFeatureSelect = (featureId: number) => unknown;
 type Props$6 = {
@@ -314,7 +313,7 @@ type Props$6 = {
     width: number;
     height: number;
     overlayUrl?: string;
-    selectedFeature?: number | void;
+    selectedFeature?: number | null | undefined;
     onFeatureSelect?: OnFeatureSelect;
     initialBounds?: {
         top: number; // Latitude
@@ -381,7 +380,7 @@ type Props$14 = {
 declare const ElectionResultsStackedBar: React.ComponentType<ThemableComponentProps<Props$14>>;
 type Props$15 = {
     items: ElectionMeta[];
-    selectedBallotId?: number;
+    selectedBallotId?: number | null;
     onSelectBallot?: (meta: ElectionMeta) => unknown;
 };
 declare const ElectionTimeline: React.ComponentType<ThemableComponentProps<Props$15>>;
@@ -397,11 +396,12 @@ type ElectionScopePickerAPIData = {
     countryData: APIRequestState<OptionWithID[]>;
 };
 declare const useElectionScopePickerApi: (api: ElectionScopeAPI, scope: ElectionScopeIncomplete) => ElectionScopePickerAPIData;
+type ElectionScopePickerSelectOnChange<K = number> = (value: OptionWithID<K> | ReadonlyArray<OptionWithID<K>> | null | undefined) => void;
 type ElectionScopePickerSelectProps<K = number> = {
     label: string;
     selectProps: {
         value: OptionWithID<K> | null;
-        onChange: (value: OptionWithID<K> | null) => unknown;
+        onChange: ElectionScopePickerSelectOnChange<K>;
         options: OptionWithID<K>[];
         isLoading: boolean;
         isDisabled: boolean;
@@ -411,4 +411,4 @@ type ElectionScopePickerSelectProps<K = number> = {
 declare const useElectionScopePickerGetSelectProps: (apiData: ElectionScopePickerAPIData, scope: ElectionScopeIncomplete, onChangeScope: (newScope: ElectionScopeIncomplete) => unknown) => ElectionScopePickerSelectProps[];
 declare const useElectionScopePickerGetTypeSelectProps: (scope: ElectionScopeIncomplete, onChangeScope: (newScope: ElectionScopeIncomplete) => unknown) => ElectionScopePickerSelectProps<ElectionScope["type"]>;
 declare const ElectionScopePicker: React.ComponentType<ThemableComponentProps<Props$16>>;
-export { ClassNames, mergeClasses, overrideClasses, Theme, useTheme, ThemeProvider, mergeThemeClasses, mergeThemeConstants, PropsObject, ThemeConstants, ThemableComponentProps, ThemableComponent, ThemedComponentProps, ThemedComponent, ThemableHOC, themable, APIInvocation, APIRequestState, UseAPIResponseOptions, useApiResponse, JSONFetchOptions, JSONFetch, makeJsonFetch, jsonFetch, APIMockHandler, APIMockEntry, mockFetch, transformApiInvocation, OptionWithID, ElectionScopeAPI, ElectionAPI, makeElectionApi, electionApiProductionUrl, electionMapOverlayUrl, ElectionScope, ElectionScopeIncomplete, ElectionScopeCompleteness, electionScopeIsComplete, ElectionScopeNames, ElectionScopeResolved, ElectionScopeIncompleteResolved, ElectionType, electionTypeInvolvesDiaspora, electionTypeHasSeats, electionHasSeats, ElectionMeta, Election, ElectionTurnout, ElectionTurnoutBreakdownCategoryType, ElectionTurnoutBreakdown, ElectionObservation, ElectionResultsCandidate, ElectionResults, makeTypographyComponent, Body, BodyMedium, BodyLarge, BodyHuge, Label, LabelMedium, Heading1, Heading2, Heading3, DivBody, DivBodyMedium, DivBodyLarge, DivBodyHuge, DivLabel, DivLabelMedium, DivHeading1, DivHeading2, DivHeading3, Underlined, Button, ColoredSquare, PartyResultCard, PartyResultInline, HorizontalStackedBarItem, HorizontalStackedBar, PercentageBars, PercentageBarsLegend, BarChart, ElectionMap, worldMapBounds, romaniaMapBounds, HereMapsAPIKeyContext, HereMapsAPIKeyProvider, HereMap, ResultsTable, ElectionTurnoutSection, ElectionObservationSection, ElectionResultsSummarySection, ElectionResultsSummaryTable, ElectionResultsSeats, ElectionResultsTableSection, ElectionResultsProcess, ElectionResultsStackedBar, ElectionTimeline, electionScopePickerUpdateType, ElectionScopePickerAPIData, useElectionScopePickerApi, ElectionScopePickerSelectProps, useElectionScopePickerGetSelectProps, useElectionScopePickerGetTypeSelectProps, ElectionScopePicker };
+export { ClassNames, mergeClasses, overrideClasses, Theme, useTheme, ThemeProvider, mergeThemeClasses, mergeThemeConstants, PropsObject, ThemeConstants, ThemableComponentProps, ThemableComponent, ThemedComponentProps, ThemedComponent, ThemableHOC, themable, APIInvocation, APIRequestState, UseAPIResponseOptions, useApiResponse, JSONFetchOptions, JSONFetch, makeJsonFetch, jsonFetch, APIMockHandler, APIMockEntry, mockFetch, transformApiInvocation, OptionWithID, ElectionScopeAPI, ElectionAPI, makeElectionApi, electionApiProductionUrl, electionMapOverlayUrl, ElectionScope, ElectionScopeIncomplete, ElectionScopeCompleteness, electionScopeIsComplete, ElectionScopeNames, ElectionScopeResolved, ElectionScopeIncompleteResolved, ElectionType, electionTypeInvolvesDiaspora, electionTypeHasSeats, electionHasSeats, ElectionMeta, Election, ElectionTurnout, ElectionTurnoutBreakdownCategoryType, ElectionTurnoutBreakdown, ElectionObservation, ElectionResultsCandidate, ElectionResults, makeTypographyComponent, Body, BodyMedium, BodyLarge, BodyHuge, Label, LabelMedium, Heading1, Heading2, Heading3, DivBody, DivBodyMedium, DivBodyLarge, DivBodyHuge, DivLabel, DivLabelMedium, DivHeading1, DivHeading2, DivHeading3, Underlined, Button, ColoredSquare, PartyResultCard, PartyResultInline, HorizontalStackedBarItem, HorizontalStackedBar, PercentageBars, PercentageBarsLegend, BarChart, ElectionMap, worldMapBounds, romaniaMapBounds, HereMapsAPIKeyContext, HereMapsAPIKeyProvider, HereMap, ResultsTable, ElectionTurnoutSection, ElectionObservationSection, ElectionResultsSummarySection, ElectionResultsSummaryTable, ElectionResultsSeats, ElectionResultsTableSection, ElectionResultsProcess, ElectionResultsStackedBar, ElectionTimeline, electionScopePickerUpdateType, ElectionScopePickerAPIData, useElectionScopePickerApi, ElectionScopePickerSelectOnChange, ElectionScopePickerSelectProps, useElectionScopePickerGetSelectProps, useElectionScopePickerGetTypeSelectProps, ElectionScopePicker };
