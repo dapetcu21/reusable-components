@@ -117,7 +117,7 @@ type ElectionType = "referendum" | "president" | "senate" | "house" | "local_cou
 declare const electionTypeInvolvesDiaspora: (electionType: ElectionType) => boolean;
 declare const electionTypeHasSeats: (electionType: ElectionType) => boolean;
 declare const electionHasSeats: (electionType: ElectionType, results: ElectionResults) => boolean;
-type ElectionMeta = {
+type ElectionBallotMeta = {
     // The app should work with any specified "type" in here, including values unknown yet to the frontend
     // This is just for extra visual customisation like splitting local council results in two tables,
     // showing the parliament seats widget or showing disapora next to the map or not
@@ -135,9 +135,9 @@ type ElectionMeta = {
 };
 // You get one of these after making a request with an ID and the data in an ElectionScope
 // (url-encoded in the GET request or whatever)
-type Election = {
+type ElectionBallot = {
     scope: ElectionScopeResolved;
-    meta: ElectionMeta;
+    meta: ElectionBallotMeta;
     // These can be missing if the election doesn't support the current scope (eg. local elections with a national scope).
     turnout?: ElectionTurnout | null;
     results?: ElectionResults | null;
@@ -196,8 +196,8 @@ interface ElectionScopeAPI {
     getCountries: () => APIInvocation<OptionWithID[]>;
 }
 interface ElectionAPI extends ElectionScopeAPI {
-    getElection: (id: number, scope: ElectionScope) => APIInvocation<Election>;
-    getElections: () => APIInvocation<ElectionMeta[]>;
+    getBallot: (id: number, scope: ElectionScope) => APIInvocation<ElectionBallot>;
+    getBallots: () => APIInvocation<ElectionBallotMeta[]>;
 }
 declare const makeElectionApi: (options?: {
     apiUrl?: string | undefined;
@@ -340,9 +340,9 @@ declare const HereMapsAPIKeyProvider: React.Provider<string>;
 declare const HereMap: React.ComponentType<ThemableComponentProps<Props$6>>;
 declare const ResultsTable: React.ComponentType<ThemableComponentProps<React.DetailedHTMLProps<React.TableHTMLAttributes<HTMLTableElement>, HTMLTableElement>>>;
 type Props$7 = {
-    meta: ElectionMeta;
+    meta: ElectionBallotMeta;
     scope: ElectionScopeIncompleteResolved;
-    turnout?: ElectionTurnout;
+    turnout?: ElectionTurnout | null;
 };
 declare const ElectionTurnoutSection: React.ComponentType<ThemableComponentProps<Props$7>>;
 type Props$8 = {
@@ -350,14 +350,14 @@ type Props$8 = {
 };
 declare const ElectionObservationSection: React.ComponentType<ThemableComponentProps<Props$8>>;
 type Props$9 = {
-    meta: ElectionMeta;
+    meta: ElectionBallotMeta;
     scope: ElectionScopeIncompleteResolved;
-    results?: ElectionResults;
+    results?: ElectionResults | null;
     separator?: ReactNode;
 };
 declare const ElectionResultsSummarySection: React.ComponentType<ThemableComponentProps<Props$9>>;
 type Props$10 = {
-    meta: ElectionMeta;
+    meta: ElectionBallotMeta;
     results: ElectionResults;
 };
 declare const ElectionResultsSummaryTable: React.ComponentType<ThemableComponentProps<Props$10>>;
@@ -366,7 +366,7 @@ type Props$11 = {
 };
 declare const ElectionResultsSeats: React.ComponentType<ThemableComponentProps<Props$11>>;
 type Props$12 = {
-    meta: ElectionMeta;
+    meta: ElectionBallotMeta;
     results: ElectionResults;
 };
 declare const ElectionResultsTableSection: React.ComponentType<ThemableComponentProps<Props$12>>;
@@ -379,9 +379,9 @@ type Props$14 = {
 };
 declare const ElectionResultsStackedBar: React.ComponentType<ThemableComponentProps<Props$14>>;
 type Props$15 = {
-    items: ElectionMeta[];
+    items: ElectionBallotMeta[];
     selectedBallotId?: number | null;
-    onSelectBallot?: (meta: ElectionMeta) => unknown;
+    onSelectBallot?: (meta: ElectionBallotMeta) => unknown;
 };
 declare const ElectionTimeline: React.ComponentType<ThemableComponentProps<Props$15>>;
 type Props$16 = {
@@ -411,4 +411,4 @@ type ElectionScopePickerSelectProps<K = number> = {
 declare const useElectionScopePickerGetSelectProps: (apiData: ElectionScopePickerAPIData, scope: ElectionScopeIncomplete, onChangeScope: (newScope: ElectionScopeIncomplete) => unknown) => ElectionScopePickerSelectProps[];
 declare const useElectionScopePickerGetTypeSelectProps: (scope: ElectionScopeIncomplete, onChangeScope: (newScope: ElectionScopeIncomplete) => unknown) => ElectionScopePickerSelectProps<ElectionScope["type"]>;
 declare const ElectionScopePicker: React.ComponentType<ThemableComponentProps<Props$16>>;
-export { ClassNames, mergeClasses, overrideClasses, Theme, useTheme, ThemeProvider, mergeThemeClasses, mergeThemeConstants, PropsObject, ThemeConstants, ThemableComponentProps, ThemableComponent, ThemedComponentProps, ThemedComponent, ThemableHOC, themable, APIInvocation, APIRequestState, UseAPIResponseOptions, useApiResponse, JSONFetchOptions, JSONFetch, makeJsonFetch, jsonFetch, APIMockHandler, APIMockEntry, mockFetch, transformApiInvocation, OptionWithID, ElectionScopeAPI, ElectionAPI, makeElectionApi, electionApiProductionUrl, electionMapOverlayUrl, ElectionScope, ElectionScopeIncomplete, ElectionScopeCompleteness, electionScopeIsComplete, ElectionScopeNames, ElectionScopeResolved, ElectionScopeIncompleteResolved, ElectionType, electionTypeInvolvesDiaspora, electionTypeHasSeats, electionHasSeats, ElectionMeta, Election, ElectionTurnout, ElectionTurnoutBreakdownCategoryType, ElectionTurnoutBreakdown, ElectionObservation, ElectionResultsCandidate, ElectionResults, makeTypographyComponent, Body, BodyMedium, BodyLarge, BodyHuge, Label, LabelMedium, Heading1, Heading2, Heading3, DivBody, DivBodyMedium, DivBodyLarge, DivBodyHuge, DivLabel, DivLabelMedium, DivHeading1, DivHeading2, DivHeading3, Underlined, Button, ColoredSquare, PartyResultCard, PartyResultInline, HorizontalStackedBarItem, HorizontalStackedBar, PercentageBars, PercentageBarsLegend, BarChart, ElectionMap, worldMapBounds, romaniaMapBounds, HereMapsAPIKeyContext, HereMapsAPIKeyProvider, HereMap, ResultsTable, ElectionTurnoutSection, ElectionObservationSection, ElectionResultsSummarySection, ElectionResultsSummaryTable, ElectionResultsSeats, ElectionResultsTableSection, ElectionResultsProcess, ElectionResultsStackedBar, ElectionTimeline, electionScopePickerUpdateType, ElectionScopePickerAPIData, useElectionScopePickerApi, ElectionScopePickerSelectOnChange, ElectionScopePickerSelectProps, useElectionScopePickerGetSelectProps, useElectionScopePickerGetTypeSelectProps, ElectionScopePicker };
+export { ClassNames, mergeClasses, overrideClasses, Theme, useTheme, ThemeProvider, mergeThemeClasses, mergeThemeConstants, PropsObject, ThemeConstants, ThemableComponentProps, ThemableComponent, ThemedComponentProps, ThemedComponent, ThemableHOC, themable, APIInvocation, APIRequestState, UseAPIResponseOptions, useApiResponse, JSONFetchOptions, JSONFetch, makeJsonFetch, jsonFetch, APIMockHandler, APIMockEntry, mockFetch, transformApiInvocation, OptionWithID, ElectionScopeAPI, ElectionAPI, makeElectionApi, electionApiProductionUrl, electionMapOverlayUrl, ElectionScope, ElectionScopeIncomplete, ElectionScopeCompleteness, electionScopeIsComplete, ElectionScopeNames, ElectionScopeResolved, ElectionScopeIncompleteResolved, ElectionType, electionTypeInvolvesDiaspora, electionTypeHasSeats, electionHasSeats, ElectionBallotMeta, ElectionBallot, ElectionTurnout, ElectionTurnoutBreakdownCategoryType, ElectionTurnoutBreakdown, ElectionObservation, ElectionResultsCandidate, ElectionResults, makeTypographyComponent, Body, BodyMedium, BodyLarge, BodyHuge, Label, LabelMedium, Heading1, Heading2, Heading3, DivBody, DivBodyMedium, DivBodyLarge, DivBodyHuge, DivLabel, DivLabelMedium, DivHeading1, DivHeading2, DivHeading3, Underlined, Button, ColoredSquare, PartyResultCard, PartyResultInline, HorizontalStackedBarItem, HorizontalStackedBar, PercentageBars, PercentageBarsLegend, BarChart, ElectionMap, worldMapBounds, romaniaMapBounds, HereMapsAPIKeyContext, HereMapsAPIKeyProvider, HereMap, ResultsTable, ElectionTurnoutSection, ElectionObservationSection, ElectionResultsSummarySection, ElectionResultsSummaryTable, ElectionResultsSeats, ElectionResultsTableSection, ElectionResultsProcess, ElectionResultsStackedBar, ElectionTimeline, electionScopePickerUpdateType, ElectionScopePickerAPIData, useElectionScopePickerApi, ElectionScopePickerSelectOnChange, ElectionScopePickerSelectProps, useElectionScopePickerGetSelectProps, useElectionScopePickerGetTypeSelectProps, ElectionScopePicker };

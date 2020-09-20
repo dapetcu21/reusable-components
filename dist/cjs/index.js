@@ -1163,12 +1163,12 @@ var makeElectionApi = options => {
 
   var fetch = (_options$fetch = options === null || options === void 0 ? void 0 : options.fetch) !== null && _options$fetch !== void 0 ? _options$fetch : makeJsonFetch((_options$apiUrl = options === null || options === void 0 ? void 0 : options.apiUrl) !== null && _options$apiUrl !== void 0 ? _options$apiUrl : electionApiProductionUrl);
   return {
-    getElection: (id, scope) => fetch("GET", "/ballot", {
+    getBallot: (id, scope) => fetch("GET", "/ballot", {
       query: _objectSpread$1({
         BallotId: id
       }, scopeToQuery(scope))
     }),
-    getElections: () => fetch("GET", "/ballots"),
+    getBallots: () => fetch("GET", "/ballots"),
     getCounties: () => fetch("GET", "/counties"),
     getLocalities: countyId => fetch("GET", "/localities", {
       query: {
